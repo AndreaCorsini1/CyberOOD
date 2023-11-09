@@ -10,6 +10,8 @@ from plot import plot_embeddings
 
 #
 PLOT_STEP = 3
+SEED = 12345
+DEV = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
 def make_model(model_name: str, in_size: int, num_classes: int):
@@ -32,7 +34,7 @@ def make_model(model_name: str, in_size: int, num_classes: int):
         model.name = 'CenterFNN'
     else:
         raise RuntimeError(f"Unknown model {model_name}")
-    return model, train_fn
+    return model.to(DEV), train_fn
 
 
 def train_fnn(m, dl_train, dl_val,
@@ -68,7 +70,7 @@ def train_fnn(m, dl_train, dl_val,
 
         for x, y in dl_train:
             # PREDICT
-            y_pred, z = m(x)
+            y_pred, z = m(x.to(DEV))
 
             # LOSS
             loss = ce_loss(y_pred, y)
@@ -90,11 +92,13 @@ def train_fnn(m, dl_train, dl_val,
         print(f"\t\tavg sil={_silhouette / _cnt:.5f}")
 
         # Validation
-        val_pred, val_y, val_z = predictions(m, dl_val)
+        val_pred, val_y, val_z = predictions(m, dl_val, device=DEV)
         if (e + 1) % PLOT_STEP == 0:
-            plot_embeddings(val_z.cpu().numpy(), val_y, clf=m.clf,
+            plot_embeddings(val_z.cpu().numpy(), val_y, clf=m.clf.cpu(),
                             title=f"Epoch {e}", **kwargs)
-        y_pred = val_pred.argmax(-1)
+            m = m.to(DEV)
+        val_y = val_y.cpu()
+        y_pred = val_pred.cpu().argmax(-1)
         performance(val_y, y_pred, classes=classes)
         f1_s = f1_score(val_y.numpy(), y_pred.numpy(), average='macro')
         if b_score < f1_s:
@@ -137,7 +141,7 @@ def train_center(m, dl_train, dl_val,
     """
     # Loss function
     ce_loss = losses.CrossEntropy(weight=weight)
-    center_loss = losses.CenterLoss(num_classes=num_classes)
+    center_loss = losses.CenterLoss(num_classes=num_classes, device=DEV)
     # Optimizer
     opti_model = torch.optim.Adam(m.parameters(), lr=lr_model)
     opti_loss = torch.optim.Adam(center_loss.parameters(), lr=lr_loss)
@@ -151,7 +155,7 @@ def train_center(m, dl_train, dl_val,
 
         for x, y in dl_train:
             # PREDICT
-            y_pred, z = m(x)
+            y_pred, z = m(x.to(DEV))
 
             # LOSS
             loss = ce_loss(y_pred, y)
@@ -222,6 +226,9 @@ args = parser.parse_args()
 
 
 if __name__ == '__main__':
+    # fix random seeds
+    torch.manual_seed(SEED)
+
     # Make dataset
     print(f'Load and make the datasets for {args.scenario}:')
     d_path, classes, scenarios, mapping, _ = dataset_info(args.dataset)

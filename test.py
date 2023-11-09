@@ -9,6 +9,8 @@ from sklearn import metrics as skl_metrics
 
 #
 avoid = ['accuracy', 'macro avg', 'weighted avg']
+SEED = 12345
+DEV = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
 def label_remapping(preds, y_truth):
@@ -200,6 +202,11 @@ args = parser.parse_args()
 
 
 if __name__ == '__main__':
+    # TODO: device
+
+    # fix random seeds
+    torch.manual_seed(SEED)
+
     ######
     print(f'Load and make the datasets for {args.scenario}:')
     d_path, classes, scenarios, mapping, drop_attacks = dataset_info(args.dataset)
@@ -231,7 +238,8 @@ if __name__ == '__main__':
     # Load the model
     base_path = f"./checkpoints/{args.dataset}"
     model_ = torch.load(f'{base_path}/{args.model}_{args.scenario}_'
-                        f'{"bin" if args.binary else "mc"}.pt')
+                        f'{"bin" if args.binary else "mc"}.pt',
+                        map_location=DEV)
     print(model_)
 
     ###### TEST DETECTORS

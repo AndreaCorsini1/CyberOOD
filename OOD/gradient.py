@@ -105,8 +105,10 @@ class ODIN(object):
             before_scores.append((pred / self.temp).softmax(-1).cpu())
 
             # Step 2: Compute the perturbation (in batched form)
-            loss = F.cross_entropy(pred, pred.argmax(-1), reduction='sum')
-            loss.backward()
+            loss = F.cross_entropy(pred / self.temp, pred.argmax(-1),
+                                   reduction='sum')
+            self.model.zero_grad()  # Zero all existing gradients
+            loss.backward()         # Calculate gradients
             batch = x - eps * _x.grad.detach().sign()
 
             # Step 3: Generate the predictions for perturbed data
