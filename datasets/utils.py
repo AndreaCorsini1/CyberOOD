@@ -19,8 +19,8 @@ def dataset_info(data_name: str = 'ids2018'):
     if data_name.lower() == 'ids2017':
         d_path = 'datasets/IDS2017/'
         classes = [
-            "Benign", "FTP-Patator", "SSH-Patator", "DoS GoldenEye",
-            "DoS Hulk", "DoS Slowhttp", "DoS slowloris",
+            "Benign", "FTP-patator", "SSH-patator", "DoS-eye",
+            "DoS-hulk", "DoS-http", "DoS-loris",
             "Heartbleed", "Web-BForce", "Web Attack - XSS",
             "Web-Sql Injection", "Infiltration",
             "Bot", "PortScan", "DDoS"
@@ -28,9 +28,19 @@ def dataset_info(data_name: str = 'ids2018'):
         # Training scenarios
         scenarios = {
             'B': ['benign'],
-            'OOD': ['heartbleed', 'web attack - xss', 'web-sql injection', 'infiltration'],
-            'C2': ['benign', 'dos hulk', 'portscan', 'ssh-patator'],
-            'S2': ['benign', 'ddos', 'ssh-patator', 'dos slowloris'],
+            'OOD': ['heartbleed', 'web attack - xss', 'infiltration'],
+            # Similar attacks
+            'DoS': ['benign', 'dos-eye', 'dos-hulk', 'dos-loris', 'dos-http'],
+            'BF': ['benign', 'ftp-patator', 'ssh-patator'],
+            # Mixtures
+            'C1': ['benign', 'dos-hulk', 'ftp-patator'],
+            'C2': ['benign', 'dos-hulk', 'ftp-patator', 'portscan'],
+            'S1': ['benign', 'ddos', 'ssh-patator'],
+            'S2': ['benign', 'ddos', 'ssh-patator', 'dos-loris'],
+            # Vary only one
+            'K1': ['benign', 'dos-hulk', 'ftp-patator'],
+            'K2': ['benign', 'dos-hulk', 'ddos'],
+            'K3': ['benign', 'dos-hulk', 'bot'],
         }
         # Drop: Heartbleed, Sql Injection, XSS and Infiltration
         drop_attacks = [7, 9, 10, 11]
@@ -38,20 +48,66 @@ def dataset_info(data_name: str = 'ids2018'):
         d_path = 'datasets/IDS2018/'
         classes = [
             'Benign', 'FTP-BForce', 'SSH-BForce',
-            'DoS-GoldenEye', 'DoS-Hulk', 'DoS-SlowHTTP', 'DoS-Slowloris',
-            'Web-BForce', 'XSS-BForce', 'SQL Injection',
-            'Infiltration', 'Bot',
-            'DDOS-HTTP', 'DDOS-UDP', 'DDOS-HOIC'
+            'DoS-eye', 'DoS-hulk', 'DoS-http', 'DoS-loris',
+            'Web-BForce', 'XSS-BForce', 'SQL Injection', 'Infiltration',
+            'Bot', 'DDoS-http', 'DDoS-udp', 'DDoS-hoic'
         ]
         scenarios = {
             'B': ['benign'],
-            'OOD': ['sql injection', 'infiltration'],
+            'OOD': ['infiltration'],
+            # Similar attacks
+            'DoS': ['benign', 'dos-eye', 'dos-hulk', 'dos-loris', 'dos-http'],
+            'DDoS': ['benign', 'ddos-http', 'ddos-udp', 'ddos-hoic'],
+            'BF': ['benign', 'ftp-bforce', 'ssh-bforce'],
+            # Mixtures
+            'C1': ['benign', 'dos-hulk', 'ftp-bforce'],
             'C2': ['benign', 'dos-hulk', 'ftp-bforce', 'ddos-hoic'],
+            'S1': ['benign', 'ddos-http', 'ddos-udp', 'ddos-hoic',
+                   'ssh-bforce'],
+            'S2': ['benign', 'ddos-http', 'ddos-udp', 'ddos-hoic', 'ssh-bforce',
+                   'dos-slowloris'],
             'M2': ['benign', 'dos-goldeneye', 'bot', 'ddos-udp'],
             'R2': ['benign', 'dos-hulk', 'ssh-bforce', 'ddos-http'],
+            # Vary only one
+            'K1': ['benign', 'dos-hulk', 'ftp-bforce'],
+            'K2': ['benign', 'dos-hulk', 'ddos-http'],
+            'K3': ['benign', 'dos-hulk', 'bot'],
         }
         # Drop attacks: Sql Injection
         drop_attacks = [9, 10]
+    elif data_name.lower() == 'ids2021':
+        d_path = 'datasets/IDS2021/'
+        classes = [
+            'Benign',
+            'DoS-hulk-eva', 'DoS-hulk-nod', 'DoS-hulk-req', 'DoS-hulk-sec',
+            'DoS-http-eva', 'DoS-http-nod', 'DoS-http-req', 'DoS-http-sec',
+            'DoS-loris-eva', 'DoS-loris-nod', 'DoS-loris-req', 'DoS-loris-sec',
+            'DoS-tcp-eva', 'DoS-tcp-nod', 'DoS-tcp-req', 'DoS-tcp-sec',
+        ]
+        scenarios = {
+            'A': [c.lower() for c in classes],
+            'B': ['benign'],
+            # Vary only one
+            'Q1': ['benign', 'dos-hulk-nod', 'dos-http-nod', 'dos-loris-nod',
+                   'dos-tcp-nod'],
+            'Q3': ['benign',
+                   'dos-hulk-nod', 'dos-hulk-req', 'dos-hulk-sec',
+                   'dos-http-nod', 'dos-http-req', 'dos-http-sec',
+                   'dos-loris-nod', 'dos-loris-req', 'dos-loris-sec',
+                   'dos-tcp-nod', 'dos-tcp-req', 'dos-tcp-sec'],
+            'Q2': ['benign',
+                   'dos-hulk-eva', 'dos-hulk-nod', 'dos-hulk-sec',
+                   'dos-http-eva', 'dos-http-nod', 'dos-http-sec',
+                   'dos-loris-eva', 'dos-loris-nod', 'dos-loris-sec',
+                   'dos-tcp-eva', 'dos-tcp-nod', 'dos-tcp-sec'],
+            'Q4': ['benign',
+                   'dos-hulk-eva', 'dos-hulk-nod', 'dos-hulk-req',
+                   'dos-http-eva', 'dos-http-nod', 'dos-http-req',
+                   'dos-loris-eva', 'dos-loris-nod', 'dos-loris-req',
+                   'dos-tcp-eva', 'dos-tcp-nod', 'dos-tcp-req'],
+        }
+        # Drop:
+        drop_attacks = []
     else:
         raise RuntimeError(f"Unknown dataset {data_name}")
 
