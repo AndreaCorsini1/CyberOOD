@@ -68,6 +68,9 @@ def train_fnn(m, dl_train, dl_val,
         _silhouette, _cnt = 0, 0
 
         for x, y in dl_train:
+            x = x.to(DEV)
+            y = y.to(DEV)
+
             # PREDICT
             y_pred, z = m(x.to(DEV))
 
@@ -153,8 +156,11 @@ def train_center(m, dl_train, dl_val,
         _silhouette, _cnt = 0, 0
 
         for x, y in dl_train:
+            x = x.to(DEV)
+            y = y.to(DEV)
+
             # PREDICT
-            y_pred, z = m(x.to(DEV))
+            y_pred, z = m(x)
 
             # LOSS
             loss = ce_loss(y_pred, y)
