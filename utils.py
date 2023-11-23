@@ -1,5 +1,4 @@
 import torch
-import torch.nn.functional as F
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
@@ -28,6 +27,62 @@ def predictions(model, loader, device: str = 'cpu'):
     #
     return torch.cat(y_pred, dim=0), torch.cat(y_true, dim=0), \
            torch.cat(embed, dim=0)
+
+
+class CenterLoss(torch.nn.Module):
+    """
+    Center loss.
+
+    Reference:
+    Wen et al. A Discriminative Feature Learning Approach for Deep Face
+    Recognition. ECCV 2016.
+
+    Args:
+        num classes: number of classes (centers).
+        dim: number of embedding features. In this work, it is fixed to 2.
+    """
+    def __init__(self,
+                 num_classes: int = 2,
+                 weight: torch.Tensor = None,
+                 dim: int = 2,
+                 device: str = 'cpu'):
+        super(CenterLoss, self).__init__()
+        self.num_classes = num_classes
+        self.feat_dim = dim
+        self.device = device
+        self.weight = weight
+        # Initial centers
+        self.centers = torch.nn.Parameter(torch.randn(num_classes, dim,
+                                                      device=device))
+
+    def forward(self, x: torch.Tensor, labels: torch.Tensor):
+        """
+        Forward call.
+
+        Args:
+            x: The feature matrix ().
+            labels: (Tensor with shape (batch_size))
+                Ground truth labels.
+        """
+        batch_size = x.size(0)
+        # Develop square of binomial
+        distmat = torch.pow(x, 2).sum(dim=1, keepdim=True).expand(
+            batch_size, self.num_classes) + \
+                  torch.pow(self.centers, 2).sum(dim=1, keepdim=True).expand(
+            self.num_classes, batch_size).t()
+        distmat.addmm_(x, self.centers.t(), beta=1, alpha=-2)
+        #
+        classes = torch.arange(self.num_classes, dtype=torch.long,
+                               device=self.device)
+        labels = labels.unsqueeze(1).expand(batch_size, self.num_classes)
+        mask = labels.eq(classes.expand(batch_size, self.num_classes))
+        #
+        if self.weight is not None:
+            dist = distmat * mask.float() * self.weight
+        else:
+            dist = distmat * mask.float()
+        loss = dist.clamp(min=1e-12, max=1e+12).sum() / batch_size
+        return loss
 
 
 def performance(y_true, y_pred, classes=('Benign', 'Malicious'),
@@ -59,30 +114,3 @@ def performance(y_true, y_pred, classes=('Benign', 'Malicious'),
     #                                         target_names=classes)
     # print(rep)
     return cm
-
-
-def fgsm(model: torch.nn.Module,
-         x: torch.Tensor,
-         y: torch.Tensor,
-         epsilon: float = 0.1):
-    """
-    Construct FGSM adversarial examples on the examples x.
-
-    Goodfellow, Ian J., Jonathon Shlens, and Christian Szegedy.
-    "Explaining and harnessing adversarial examples."
-
-    Args:
-        model:
-        x:
-        y:
-        epsilon:
-    :return:
-    """
-    delta = torch.zeros_like(x, requires_grad=True)
-    pred, _ = model(x + delta)
-    if isinstance(pred, tuple):
-        pred, _ = pred
-    #
-    loss = F.cross_entropy(pred, y)
-    loss.backward()
-    return epsilon * delta.grad.detach().sign()

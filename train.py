@@ -1,15 +1,14 @@
 import argparse
 import torch
 import FNN
-import losses
 from datasets.utils import dataset_info, make_dataset, make_loader
 from sklearn.metrics import silhouette_samples as sil_scores
 from sklearn.metrics import f1_score
-from utils import performance, predictions
+from utils import performance, predictions, CenterLoss
 from plot import plot_embeddings
 
 #
-PLOT_STEP = 3
+PLOT_STEP = 300
 SEED = 12345
 DEV = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -58,7 +57,7 @@ def train_fnn(m, dl_train, dl_val,
         Trained model and None
     """
     # Optimizer and Loss function
-    ce_loss = losses.CrossEntropy(weight=weight)
+    ce_loss = torch.nn.CrossEntropyLoss(weight=weight)
     opti_model = torch.optim.Adam(m.parameters(), lr=lr_model)
 
     #
@@ -140,8 +139,8 @@ def train_center(m, dl_train, dl_val,
         Trained model and generated center at the end of training.
     """
     # Loss function
-    ce_loss = losses.CrossEntropy(weight=weight)
-    center_loss = losses.CenterLoss(num_classes=num_classes, device=DEV)
+    ce_loss = torch.nn.CrossEntropyLoss(weight=weight)
+    center_loss = CenterLoss(num_classes=num_classes, device=DEV)
     # Optimizer
     opti_model = torch.optim.Adam(m.parameters(), lr=lr_model)
     opti_loss = torch.optim.Adam(center_loss.parameters(), lr=lr_loss)
@@ -208,11 +207,11 @@ def train_center(m, dl_train, dl_val,
 
 
 parser = argparse.ArgumentParser(description='Train Model')
-parser.add_argument("-dataset", type=str, default='ids2017',
+parser.add_argument("-dataset", type=str, default='ids2021',
                     required=False, help="Name of the dataset to load.")
 parser.add_argument("-model", type=str, default='centerfnn',
                     required=False, help="Name of the model.")
-parser.add_argument("-scenario", type=str, default='C2',
+parser.add_argument("-scenario", type=str, default='Q1',
                     required=False, help="Training scenario (which attacks).")
 parser.add_argument("-epochs", type=int, default=25,
                     required=False, help="Number of epochs.")
@@ -226,13 +225,15 @@ args = parser.parse_args()
 
 
 if __name__ == '__main__':
+    print(f"Running on {DEV}", '\n', args)
     # fix random seeds
     torch.manual_seed(SEED)
 
     # Make dataset
     print(f'Load and make the datasets for {args.scenario}:')
     d_path, classes, scenarios, mapping, _ = dataset_info(args.dataset)
-    train_s, val_s, _, _ = make_dataset(d_path, scenarios[args.scenario])
+    train_s, val_s, _, _ = make_dataset(d_path, scenarios[args.scenario],
+                                        verbose=True)
     if args.binary:
         train_s = (train_s[0], (train_s[1] > 0).long())
         val_s = (val_s[0], (val_s[1] > 0).long())
