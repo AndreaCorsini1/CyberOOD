@@ -54,12 +54,12 @@ class MCDropout(object):
 
             # Generate multiple prediction for the batch
             for _ in range(num_samples):
-                _logits, _ = self.model(x)
+                _logits, _ = self.model(x.to(self.device))
                 _preds.append(torch.softmax(_logits / self.T, dim=-1))
             mcd_preds.append(torch.stack(_preds, dim=1))
             _y.append(y)
 
-        return torch.cat(mcd_preds, dim=0), torch.cat(_y, dim=0)
+        return torch.cat(mcd_preds, dim=0).cpu(), torch.cat(_y, dim=0)
 
     def tune(self, val, num_samples: int = 100):
         """
@@ -167,13 +167,14 @@ class Confidence(object):
         _y = []
 
         for x, y in loader:
-            _logits, _ = self.model(x)
+            _logits, _ = self.model(x.to(self.device))
             conf, y_pred = torch.softmax(_logits / self.T, dim=-1).max(-1)
             #
             _y.append(y if tuning else y_pred)
             conf_preds.append(conf)
         #
-        return torch.cat(conf_preds, dim=0).squeeze(), torch.cat(_y, dim=0)
+        return (torch.cat(conf_preds, dim=0).squeeze().cpu(),
+                torch.cat(_y, dim=0).cpu())
 
     def tune(self, val):
         """

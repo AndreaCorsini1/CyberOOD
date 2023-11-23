@@ -96,7 +96,7 @@ def train_fnn(m, dl_train, dl_val,
         # Validation
         val_pred, val_y, val_z = predictions(m, dl_val, device=DEV)
         if (e + 1) % PLOT_STEP == 0:
-            plot_embeddings(val_z.cpu().numpy(), val_y, clf=m.clf.cpu(),
+            plot_embeddings(val_z.numpy(), val_y, clf=m.clf.cpu(),
                             title=f"Epoch {e}", **kwargs)
             m = m.to(DEV)
         val_y = val_y.cpu()

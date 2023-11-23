@@ -12,10 +12,12 @@ class KNNDetector(object):
                  model,
                  k: int = 15,
                  leaf_size: int = 50,
-                 q: float = 0.95):
+                 q: float = 0.95,
+                 device: str = 'cpu'):
         self.k = k
         self.leaf_size = leaf_size
         self._q = q
+        self.device = device
         #
         self.model = model
         self.knns = []
@@ -43,9 +45,11 @@ class KNNDetector(object):
             None
         """
         #
-        _yp_train, y_train, pnts_train = predictions(self.model, dl_train)
+        _yp_train, y_train, pnts_train = predictions(self.model, dl_train,
+                                                     device=self.device)
         yp_train = _yp_train.argmax(-1)
-        _yp_val, y_val, pnts_val = predictions(self.model, dl_val)
+        _yp_val, y_val, pnts_val = predictions(self.model, dl_val,
+                                               device=self.device)
         yp_val = _yp_val.argmax(-1)
 
         # Find interval for in-distribution data
@@ -102,7 +106,7 @@ class KNNDetector(object):
              - The OOD predictions, true if OOD.
         """
         #
-        preds, y_truth, z = predictions(self.model, loader)
+        preds, y_truth, z = predictions(self.model, loader, device=self.device)
         y_preds = preds.argmax(-1)
         #
         return y_preds, self.from_predictions(z, y_preds)
@@ -117,7 +121,7 @@ class SilhoDetector(object):
                  device: str = 'cpu'):
         self.model = model
         self.centers = None
-        self.dev = device
+        self.device = device
         self._q = q
 
         #
@@ -236,7 +240,7 @@ class SilhoDetector(object):
              - The OOD predictions, true if OOD.
         """
         #
-        preds, y_truth, z = predictions(self.model, loader)
+        preds, y_truth, z = predictions(self.model, loader, device=self.device)
         y_preds = preds.argmax(-1)
         #
         return y_preds, self.from_predictions(z, y_preds)
