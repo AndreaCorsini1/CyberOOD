@@ -191,9 +191,9 @@ def train_center(m, dl_train, dl_val,
         print(f"\t\tavg sil={_silhouette / _cnt:.5f}")
 
         # Validation
-        val_pred, val_y, val_z = predictions(m, dl_val)
+        val_pred, val_y, val_z = predictions(m, dl_val, device=DEV)
         if (e + 1) % PLOT_STEP == 0:
-            plot_embeddings(val_z.cpu().numpy(), val_y, clf=m.clf,
+            plot_embeddings(val_z.numpy(), val_y, clf=m.clf,
                             title=f"Epoch {e}", **kwargs)
         y_pred = val_pred.argmax(-1)
         performance(val_y, y_pred, classes=classes)

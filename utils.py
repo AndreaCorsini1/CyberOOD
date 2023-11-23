@@ -25,8 +25,8 @@ def predictions(model, loader, device: str = 'cpu'):
         y_true.append(y)
         y_pred.append(pred)
     #
-    return torch.cat(y_pred, dim=0), torch.cat(y_true, dim=0), \
-           torch.cat(embed, dim=0)
+    return torch.cat(y_pred, dim=0).cpu(), torch.cat(y_true, dim=0), \
+           torch.cat(embed, dim=0).cpu()
 
 
 class CenterLoss(torch.nn.Module):
